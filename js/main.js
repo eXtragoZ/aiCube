@@ -46,7 +46,7 @@ function init() {
 
 	//addCircle();
 	newCube()
-	
+
 	initStats();
 	initControls();
 
@@ -79,8 +79,8 @@ function newCube() {
 
 function addStickers(cubi, i, j, k) {
 	const min = -1, max = 1;
-	const distSticker = cubiSize/2+1;
-	
+	const distSticker = cubiSize / 2 + 1;
+
 	if (i == max) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xdd3311);
 		sticker.position.set(distSticker, 0, 0);
@@ -148,7 +148,7 @@ function initStats() {
 function initControls() {
 	const gui = new dat.GUI({ closeOnTop: true });
 	gui.add(this, 'rotateRed').name('Rotar Rojo');
-	gui.add(this, 'rotate').name('Rotar ?');
+	gui.add(this, 'rotateGreen').name('Rotar Verde');
 	gui.add(controls, 'menu', [75, 100, 150, 200, 250, 300]).name('Tamaño Menu %').onChange(function () {
 		$('.dg.main.a').css({
 			'transform-origin': '0 0',
@@ -197,24 +197,78 @@ function rotateRed() {
 	inRotation = !inRotation;
 	for (let j = min; j <= max; j++) {
 		for (let k = min; k <= max; k++) {
-			//cubeMatrix[1][j][k].rotateOnAxis(new THREE.Vector3(1, 0, 0), deg2rad(45));
-			//cubeMatrix[1][j][k].rotation.x += deg2rad(45);
-			//cubeMatrix[1][j][k].quaternion.multiply(new THREE.Quaternion().setFromEuler( new THREE.Euler(deg2rad(45), 0, 0)));
 			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(1, 0, 0), deg2rad(45));
 		}
 	}
 
+	let axisA = 1, axisB = 1, addAxisA = 0, addAxisB = -1;
+	const temp = cubeMatrix[1][axisA][axisB];
+	const maxLoop = (max - min + 1)**2 - 1*1 - 2;
+	for (let n = 0; n <= maxLoop; n++) {
+		if (axisB + addAxisB < min || axisB + addAxisB > max) {
+			if (axisA == max) {
+				addAxisB = 0, addAxisA = -1;
+			} else {
+				addAxisB = 0, addAxisA = 1;
+			}
+		}
+		if (axisA + addAxisA < min || axisA + addAxisA > max) {
+			if (axisB == max) {
+				addAxisB = -1, addAxisA = 0;
+			} else {
+				addAxisB = 1, addAxisA = 0;
+			}
+		}
+		let newAxisA = axisA + addAxisA
+		let newAxisB = axisB + addAxisB
+		//console.log(`j ${j}, k ${k}`);
+		cubeMatrix[1][axisA][axisB] = cubeMatrix[1][newAxisA][newAxisB];
+		axisA = newAxisA, axisB = newAxisB;
+		if (n == maxLoop) {
+			cubeMatrix[1][axisA][axisB] = temp;
+		}
+	}
+}
 
-		const temp = cubeMatrix[1][1][1];
-		cubeMatrix[1][1][1] = cubeMatrix[1][1][0];
-		cubeMatrix[1][1][0] = cubeMatrix[1][1][-1];
-		cubeMatrix[1][1][-1] = cubeMatrix[1][0][-1];
-		cubeMatrix[1][0][-1] = cubeMatrix[1][-1][-1];
-		cubeMatrix[1][-1][-1] = cubeMatrix[1][-1][0];
-		cubeMatrix[1][-1][0] = cubeMatrix[1][-1][1];
-		cubeMatrix[1][-1][1] = cubeMatrix[1][0][1];
-		cubeMatrix[1][0][1] = temp;
 
+
+function rotateGreen() {
+	const min = -1, max = 1, j = 1;
+	inRotation = !inRotation;
+	for (let i = min; i <= max; i++) {
+		for (let k = min; k <= max; k++) {
+			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(0, 1, 0), deg2rad(45));
+		}
+	}
+
+
+	let axisA = 1, axisB = 1, addAxisA = 0, addAxisB = 1;
+	const temp = cubeMatrix[axisA][1][axisB];
+	const maxLoop = (max - min + 1)**2 - 1*1 - 2;
+	for (let n = 0; n <= maxLoop; n++) {
+		if (axisB + addAxisB < min || axisB + addAxisB > max) {
+			if (axisA == max) {
+				addAxisB = 0, addAxisA = -1;
+			} else {
+				addAxisB = 0, addAxisA = 1;
+			}
+		}
+		if (axisA + addAxisA < min || axisA + addAxisA > max) {
+			if (axisB == max) {
+				addAxisB = -1, addAxisA = 0;
+			} else {
+				addAxisB = 1, addAxisA = 0;
+			}
+		}
+		let newAxisA = axisA + addAxisA
+		let newAxisB = axisB + addAxisB
+		//console.log(`j ${j}, k ${k}`);
+		cubeMatrix[axisA][1][axisB] = cubeMatrix[newAxisA][1][newAxisB];
+		axisA = newAxisA, axisB = newAxisB;
+		if (n == maxLoop) {
+			cubeMatrix[axisA][1][axisB] = temp;
+		}
+	}
 }
 
 function rotateAroundWorldAxis(obj, axis, radians) {
@@ -223,22 +277,7 @@ function rotateAroundWorldAxis(obj, axis, radians) {
 	rotWorldMatrix.multiply(obj.matrix);  // pre-multiply
 	obj.matrix = rotWorldMatrix;
 	obj.setRotationFromMatrix(obj.matrix);
-  }
-
-function rotate() {
-	const min = -1, max = 1, j = 1;
-	inRotation = !inRotation;
-	for (let i = min; i <= max; i++) {
-		for (let k = min; k <= max; k++) {
-			//cubeMatrix[1][j][k].rotateOnAxis(new THREE.Vector3(0, 1, 0), deg2rad(45));
-			//cubeMatrix[i][1][k].rotation.y += deg2rad(45);
-			//cubeMatrix[i][1][k].quaternion.multiply(new THREE.Quaternion().setFromEuler( new THREE.Euler(0, deg2rad(45), 0)));
-			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(0, 1, 0), deg2rad(45));
-		}
-	}
 }
-
-
 
 function debugIndicator(x, y, z, color) {
 	let indicator = new THREE.Mesh(
