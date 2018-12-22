@@ -20,6 +20,7 @@ let cubeSize = 300
 let cubiSize = cubeSize / 3 - 8
 let stickerSize = cubeSize * 0.25
 let cubeContainer = new THREE.Object3D();
+let cubeMatrix = [];
 
 let controls = {
 	menu: 100
@@ -43,60 +44,72 @@ function init() {
 
 	createLights();
 
-	addCircle();
-
-	for (let i = -1; i <= 1; i++) {
-		for (let j = -1; j <= 1; j++) {
-			for (let k = -1; k <= 1; k++) {
-				if (i == 0 && j == 0 && k == 0) {
-					continue;
-				}
-				let cubi = getCubi();
-				addStickers(cubi, i, j, k);
-				cubi.position.set(i * cubeSize / 3, j * cubeSize / 3, k * cubeSize / 3);
-				cubeContainer.add(cubi);
-			}
-		}
-	}
-	scene.add(cubeContainer);
+	//addCircle();
+	newCube()
+	
 	initStats();
 	initControls();
 
 	console.log(scene)
 }
 
+function newCube() {
+	const min = -1, max = 1;
+	const notVisible = (v) => v > min && v < max;
+	for (let i = min; i <= max; i++) {
+		cubeMatrix[i] = []
+		for (let j = min; j <= max; j++) {
+			cubeMatrix[i][j] = []
+			for (let k = min; k <= max; k++) {
+				if (notVisible(i) && notVisible(j) && notVisible(k)) {
+					continue;
+				}
+				const cubi = getCubi();
+				addStickers(cubi, i, j, k);
+				cubi.position.set(i * cubeSize / 3, j * cubeSize / 3, k * cubeSize / 3);
+				const cubiWrapper = new THREE.Object3D();
+				cubiWrapper.add(cubi);
+				cubeContainer.add(cubiWrapper);
+				cubeMatrix[i][j][k] = cubiWrapper;
+			}
+		}
+	}
+	scene.add(cubeContainer);
+}
+
 function addStickers(cubi, i, j, k) {
+	const min = -1, max = 1;
 	const distSticker = cubiSize/2+1;
 	
-	if (i == 1) {
+	if (i == max) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xdd3311);
 		sticker.position.set(distSticker, 0, 0);
 		sticker.rotation.set(0, deg2rad(90), 0);
 		cubi.add(sticker);
-	} else if (i == -1) {
+	} else if (i == min) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xff9000);
 		sticker.position.set(-distSticker, 0, 0);
 		sticker.rotation.set(0, deg2rad(90), 0);
 		cubi.add(sticker);
 	}
 
-	if (j == 1) {
+	if (j == max) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0x11dd33);
 		sticker.position.set(0, distSticker, 0);
 		sticker.rotation.set(deg2rad(90), 0, 0);
 		cubi.add(sticker);
-	} else if (j == -1) {
+	} else if (j == min) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xffff00);
 		sticker.position.set(0, -distSticker, 0);
 		sticker.rotation.set(deg2rad(90), 0, 0);
 		cubi.add(sticker);
 	}
 
-	if (k == 1) {
+	if (k == max) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0x5533dd);
 		sticker.position.set(0, 0, distSticker);
 		cubi.add(sticker);
-	} else if (k == -1) {
+	} else if (k == min) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xdd11dd);
 		sticker.position.set(0, 0, -distSticker);
 		cubi.add(sticker);
@@ -114,13 +127,13 @@ function getCubi() {
 
 function addCircle() {
 	let segmentCount = 32,
-		_radius = 100 + 1.5,
+		radius = 220,
 		geometry = new THREE.Geometry(),
 		material = new THREE.LineBasicMaterial({ color: 0x00FF00 });
 
 	for (let i = 0; i <= segmentCount; i++) {
 		let theta = (i / segmentCount) * Math.PI * 2;
-		geometry.vertices.push(new THREE.Vector3(Math.cos(theta) * _radius, 0, Math.sin(theta) * _radius));
+		geometry.vertices.push(new THREE.Vector3(Math.cos(theta) * radius, 0, Math.sin(theta) * radius));
 	}
 
 	scene.add(new THREE.Line(geometry, material));
@@ -134,6 +147,8 @@ function initStats() {
 }
 function initControls() {
 	const gui = new dat.GUI({ closeOnTop: true });
+	gui.add(this, 'rotateRed').name('Rotar Rojo');
+	gui.add(this, 'rotate').name('Rotar ?');
 	gui.add(controls, 'menu', [75, 100, 150, 200, 250, 300]).name('Tamaño Menu %').onChange(function () {
 		$('.dg.main.a').css({
 			'transform-origin': '0 0',
@@ -176,6 +191,54 @@ function logic(time) {
 		updateVisionLinePosition();
 	}
 }
+let inRotation = false;
+function rotateRed() {
+	const min = -1, max = 1, i = 1;
+	inRotation = !inRotation;
+	for (let j = min; j <= max; j++) {
+		for (let k = min; k <= max; k++) {
+			//cubeMatrix[1][j][k].rotateOnAxis(new THREE.Vector3(1, 0, 0), deg2rad(45));
+			//cubeMatrix[1][j][k].rotation.x += deg2rad(45);
+			//cubeMatrix[1][j][k].quaternion.multiply(new THREE.Quaternion().setFromEuler( new THREE.Euler(deg2rad(45), 0, 0)));
+			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(1, 0, 0), deg2rad(45));
+		}
+	}
+
+
+		const temp = cubeMatrix[1][1][1];
+		cubeMatrix[1][1][1] = cubeMatrix[1][1][0];
+		cubeMatrix[1][1][0] = cubeMatrix[1][1][-1];
+		cubeMatrix[1][1][-1] = cubeMatrix[1][0][-1];
+		cubeMatrix[1][0][-1] = cubeMatrix[1][-1][-1];
+		cubeMatrix[1][-1][-1] = cubeMatrix[1][-1][0];
+		cubeMatrix[1][-1][0] = cubeMatrix[1][-1][1];
+		cubeMatrix[1][-1][1] = cubeMatrix[1][0][1];
+		cubeMatrix[1][0][1] = temp;
+
+}
+
+function rotateAroundWorldAxis(obj, axis, radians) {
+	let rotWorldMatrix = new THREE.Matrix4();
+	rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+	rotWorldMatrix.multiply(obj.matrix);  // pre-multiply
+	obj.matrix = rotWorldMatrix;
+	obj.setRotationFromMatrix(obj.matrix);
+  }
+
+function rotate() {
+	const min = -1, max = 1, j = 1;
+	inRotation = !inRotation;
+	for (let i = min; i <= max; i++) {
+		for (let k = min; k <= max; k++) {
+			//cubeMatrix[1][j][k].rotateOnAxis(new THREE.Vector3(0, 1, 0), deg2rad(45));
+			//cubeMatrix[i][1][k].rotation.y += deg2rad(45);
+			//cubeMatrix[i][1][k].quaternion.multiply(new THREE.Quaternion().setFromEuler( new THREE.Euler(0, deg2rad(45), 0)));
+			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(0, 1, 0), deg2rad(45));
+		}
+	}
+}
+
+
 
 function debugIndicator(x, y, z, color) {
 	let indicator = new THREE.Mesh(
