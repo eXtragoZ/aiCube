@@ -172,7 +172,7 @@ function createLights() {
 
 function animate() {
 	let delta = clock.getElapsedTime();
-	// logic(delta);
+	logic(delta);
 
 	cameraControls.update(clock.getDelta());
 
@@ -183,67 +183,66 @@ function animate() {
 }
 
 function logic(time) {
-	if (controls.velocidad > 0) {
-		earth.rotation.y = angularVelocityEarthSimulation * time;
-		controls.rotacionTierra = normalizeAngle(rad2deg(earth.rotation.y));
-		updateGuidedUnitArmPosition();
-		updateCameraViewPosition();
-		updateVisionLinePosition();
+	if (inRotation) {
+		fRotation();
 	}
 }
+let fRotation = () => null;
 let inRotation = false;
-function rotateRed() {
-	const min = -1, max = 1, i = 1;
-	inRotation = !inRotation;
+let frames = 0;
+let rotationDuration = 4;
+function rotateRedAnimate() {
+	frames++;
+
+	const min = -1, max = 1, i = max;
 	for (let j = min; j <= max; j++) {
 		for (let k = min; k <= max; k++) {
-			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(1, 0, 0), deg2rad(45));
+			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(1, 0, 0), deg2rad(90)/rotationDuration);
 		}
 	}
-
-	let axisA = 1, axisB = 1, addAxisA = 0, addAxisB = -1;
-	const temp = cubeMatrix[1][axisA][axisB];
-	const maxLoop = (max - min + 1)**2 - 1*1 - 2;
-	for (let n = 0; n <= maxLoop; n++) {
-		if (axisB + addAxisB < min || axisB + addAxisB > max) {
-			if (axisA == max) {
-				addAxisB = 0, addAxisA = -1;
-			} else {
-				addAxisB = 0, addAxisA = 1;
-			}
-		}
-		if (axisA + addAxisA < min || axisA + addAxisA > max) {
-			if (axisB == max) {
-				addAxisB = -1, addAxisA = 0;
-			} else {
-				addAxisB = 1, addAxisA = 0;
-			}
-		}
-		let newAxisA = axisA + addAxisA
-		let newAxisB = axisB + addAxisB
-		//console.log(`j ${j}, k ${k}`);
-		cubeMatrix[1][axisA][axisB] = cubeMatrix[1][newAxisA][newAxisB];
-		axisA = newAxisA, axisB = newAxisB;
-		if (n == maxLoop) {
-			cubeMatrix[1][axisA][axisB] = temp;
-		}
+	if (frames == rotationDuration) {
+		frames = 0;
+		inRotation = false;
 	}
 }
+function rotateRed() {
+	if (inRotation) {return;}
+	inRotation = true;
+	fRotation = rotateRedAnimate
 
+	const min = -1, max = 1, i = max;
 
+	rotateMatrix((j, k) => cubeMatrix[i][j][k], (j, k, cubi) => {cubeMatrix[i][j][k] = cubi}, -1);
+	rotateMatrix((j, k) => cubeMatrix[i][j][k], (j, k, cubi) => {cubeMatrix[i][j][k] = cubi}, -1);
+}
 
-function rotateGreen() {
-	const min = -1, max = 1, j = 1;
-	inRotation = !inRotation;
+function rotateGreenAnimate() {
+	frames++;
+	const min = -1, max = 1, j = max;
 	for (let i = min; i <= max; i++) {
 		for (let k = min; k <= max; k++) {
-			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(0, 1, 0), deg2rad(45));
+			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(0, 1, 0), deg2rad(90)/rotationDuration);
 		}
 	}
+	if (frames == rotationDuration) {
+		frames = 0;
+		inRotation = false;
+	}
+}
+function rotateGreen() {
+	if (inRotation) {return;}
+	inRotation = true;
+	fRotation = rotateGreenAnimate;
 
+	const min = -1, max = 1, j = max;
 
-	let axisA = 1, axisB = 1, addAxisA = 0, addAxisB = 1;
-	const temp = cubeMatrix[axisA][1][axisB];
+	rotateMatrix((i, k) => cubeMatrix[i][j][k], (i, k, cubi) => {cubeMatrix[i][j][k] = cubi}, 1);
+	rotateMatrix((i, k) => cubeMatrix[i][j][k], (i, k, cubi) => {cubeMatrix[i][j][k] = cubi}, 1);
+}
+function rotateMatrix(getter, setter, direcction = 1) {
+	const min = -1, max = 1;
+	let axisA = 1, axisB = 1, addAxisA = 0, addAxisB = direcction;
+	const temp = getter(axisA, axisB);
 	const maxLoop = (max - min + 1)**2 - 1*1 - 2;
 	for (let n = 0; n <= maxLoop; n++) {
 		if (axisB + addAxisB < min || axisB + addAxisB > max) {
@@ -262,11 +261,11 @@ function rotateGreen() {
 		}
 		let newAxisA = axisA + addAxisA
 		let newAxisB = axisB + addAxisB
-		//console.log(`j ${j}, k ${k}`);
-		cubeMatrix[axisA][1][axisB] = cubeMatrix[newAxisA][1][newAxisB];
+		//console.log(`axisA ${axisA}, axisB ${axisB}`);
+		setter(axisA, axisB, getter(newAxisA, newAxisB));
 		axisA = newAxisA, axisB = newAxisB;
 		if (n == maxLoop) {
-			cubeMatrix[axisA][1][axisB] = temp;
+			setter(axisA, axisB, temp);
 		}
 	}
 }
@@ -277,6 +276,15 @@ function rotateAroundWorldAxis(obj, axis, radians) {
 	rotWorldMatrix.multiply(obj.matrix);  // pre-multiply
 	obj.matrix = rotWorldMatrix;
 	obj.setRotationFromMatrix(obj.matrix);
+	if (Math.abs(obj.rotation.x) < 0.0001) {
+		obj.rotation.x = 0
+	}
+	if (Math.abs(obj.rotation.y) < 0.0001) {
+		obj.rotation.y = 0
+	}
+	if (Math.abs(obj.rotation.z) < 0.0001) {
+		obj.rotation.z = 0
+	}
 }
 
 function debugIndicator(x, y, z, color) {
