@@ -222,8 +222,9 @@ function rotateRed() {
 	rotationGetter = (j, k) => cubeMatrix[i][j][k];
 	let rotationSetter = (j, k, cubi) => {cubeMatrix[i][j][k] = cubi};
 
-	rotateMatrix(rotationGetter, rotationSetter, -1);
-	rotateMatrix(rotationGetter, rotationSetter, -1);
+	for (let times = 0; times < maxCubi-minCubi; times++) {
+		rotateMatrix(rotationGetter, rotationSetter, -1);
+	}
 }
 
 function rotateGreen() {
@@ -236,8 +237,9 @@ function rotateGreen() {
 	rotationGetter = (i, k) => cubeMatrix[i][j][k];
 	let rotationSetter = (i, k, cubi) => {cubeMatrix[i][j][k] = cubi};
 
-	rotateMatrix(rotationGetter, rotationSetter, 1);
-	rotateMatrix(rotationGetter, rotationSetter, 1);
+	for (let times = 0; times < maxCubi-minCubi; times++) {
+		rotateMatrix(rotationGetter, rotationSetter, 1);
+	}
 }
 
 function rotateBlue() {
@@ -250,8 +252,9 @@ function rotateBlue() {
 	rotationGetter = (i, j) => cubeMatrix[i][j][k];
 	let rotationSetter = (i, j, cubi) => {cubeMatrix[i][j][k] = cubi};
 
-	rotateMatrix(rotationGetter, rotationSetter, -1);
-	rotateMatrix(rotationGetter, rotationSetter, -1);
+	for (let times = 0; times < maxCubi-minCubi; times++) {
+		rotateMatrix(rotationGetter, rotationSetter, -1);
+	}
 }
 
 function rotateOrange() {
@@ -264,8 +267,9 @@ function rotateOrange() {
 	rotationGetter = (j, k) => cubeMatrix[i][j][k];
 	let rotationSetter = (j, k, cubi) => {cubeMatrix[i][j][k] = cubi};
 
-	rotateMatrix(rotationGetter, rotationSetter, -1);
-	rotateMatrix(rotationGetter, rotationSetter, -1);
+	for (let times = 0; times < maxCubi-minCubi; times++) {
+		rotateMatrix(rotationGetter, rotationSetter, -1);
+	}
 }
 
 function rotateYellow() {
@@ -278,8 +282,9 @@ function rotateYellow() {
 	rotationGetter = (i, k) => cubeMatrix[i][j][k];
 	let rotationSetter = (i, k, cubi) => {cubeMatrix[i][j][k] = cubi};
 
-	rotateMatrix(rotationGetter, rotationSetter, 1);
-	rotateMatrix(rotationGetter, rotationSetter, 1);
+	for (let times = 0; times < maxCubi-minCubi; times++) {
+		rotateMatrix(rotationGetter, rotationSetter, 1);
+	}
 }
 
 function rotatePurple() {
@@ -292,14 +297,15 @@ function rotatePurple() {
 	rotationGetter = (i, j) => cubeMatrix[i][j][k];
 	let rotationSetter = (i, j, cubi) => {cubeMatrix[i][j][k] = cubi};
 
-	rotateMatrix(rotationGetter, rotationSetter, -1);
-	rotateMatrix(rotationGetter, rotationSetter, -1);
+	for (let times = 0; times < maxCubi-minCubi; times++) {
+		rotateMatrix(rotationGetter, rotationSetter, -1);
+	}
 }
 
 function rotateMatrix(getter, setter, direcction = 1) {
-	let axisA = 1, axisB = 1, addAxisA = 0, addAxisB = direcction;
+	let axisA = maxCubi, axisB = maxCubi, addAxisA = 0, addAxisB = direcction;
 	const temp = getter(axisA, axisB);
-	const maxLoop = (maxCubi - minCubi + 1)**2 - 1*1 - 2;
+	const maxLoop = (maxCubi - minCubi + 1)**2 - (maxCubi - minCubi - 1)**2 - 2;
 	for (let n = 0; n <= maxLoop; n++) {
 		if (axisB + addAxisB < minCubi || axisB + addAxisB > maxCubi) {
 			if (axisA == maxCubi) {
