@@ -21,6 +21,7 @@ let cubiSize = cubeSize / 3 - 8
 let stickerSize = cubeSize * 0.25
 let cubeContainer = new THREE.Object3D();
 let cubeMatrix = [];
+const minCubi = -1, maxCubi = 1;
 
 let controls = {
 	menu: 100
@@ -54,13 +55,12 @@ function init() {
 }
 
 function newCube() {
-	const min = -1, max = 1;
-	const notVisible = (v) => v > min && v < max;
-	for (let i = min; i <= max; i++) {
+	const notVisible = (v) => v > minCubi && v < maxCubi;
+	for (let i = minCubi; i <= maxCubi; i++) {
 		cubeMatrix[i] = []
-		for (let j = min; j <= max; j++) {
+		for (let j = minCubi; j <= maxCubi; j++) {
 			cubeMatrix[i][j] = []
-			for (let k = min; k <= max; k++) {
+			for (let k = minCubi; k <= maxCubi; k++) {
 				if (notVisible(i) && notVisible(j) && notVisible(k)) {
 					continue;
 				}
@@ -78,38 +78,37 @@ function newCube() {
 }
 
 function addStickers(cubi, i, j, k) {
-	const min = -1, max = 1;
 	const distSticker = cubiSize / 2 + 1;
 
-	if (i == max) {
+	if (i == maxCubi) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xdd3311);
 		sticker.position.set(distSticker, 0, 0);
 		sticker.rotation.set(0, deg2rad(90), 0);
 		cubi.add(sticker);
-	} else if (i == min) {
+	} else if (i == minCubi) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xff9000);
 		sticker.position.set(-distSticker, 0, 0);
 		sticker.rotation.set(0, deg2rad(90), 0);
 		cubi.add(sticker);
 	}
 
-	if (j == max) {
+	if (j == maxCubi) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0x11dd33);
 		sticker.position.set(0, distSticker, 0);
 		sticker.rotation.set(deg2rad(90), 0, 0);
 		cubi.add(sticker);
-	} else if (j == min) {
+	} else if (j == minCubi) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xffff00);
 		sticker.position.set(0, -distSticker, 0);
 		sticker.rotation.set(deg2rad(90), 0, 0);
 		cubi.add(sticker);
 	}
 
-	if (k == max) {
+	if (k == maxCubi) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0x5533dd);
 		sticker.position.set(0, 0, distSticker);
 		cubi.add(sticker);
-	} else if (k == min) {
+	} else if (k == minCubi) {
 		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xdd11dd);
 		sticker.position.set(0, 0, -distSticker);
 		cubi.add(sticker);
@@ -149,6 +148,11 @@ function initControls() {
 	const gui = new dat.GUI({ closeOnTop: true });
 	gui.add(this, 'rotateRed').name('Rotar Rojo');
 	gui.add(this, 'rotateGreen').name('Rotar Verde');
+	gui.add(this, 'rotateBlue').name('Rotar Azul');
+	gui.add(this, 'rotateOrange').name('Rotar Naranja');
+	gui.add(this, 'rotateYellow').name('Rotar Amarillo');
+	gui.add(this, 'rotatePurple').name('Rotar Violeta');
+	
 	gui.add(controls, 'menu', [75, 100, 150, 200, 250, 300]).name('Tamaño Menu %').onChange(function () {
 		$('.dg.main.a').css({
 			'transform-origin': '0 0',
@@ -184,76 +188,128 @@ function animate() {
 
 function logic(time) {
 	if (inRotation) {
-		fRotation();
+		rotateAnimate();
 	}
 }
-let fRotation = () => null;
-let inRotation = false;
-let frames = 0;
-let rotationDuration = 4;
-function rotateRedAnimate() {
-	frames++;
 
-	const min = -1, max = 1, i = max;
-	for (let j = min; j <= max; j++) {
-		for (let k = min; k <= max; k++) {
-			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(1, 0, 0), deg2rad(90)/rotationDuration);
+let inRotation = false;
+let rotationFrames = 0;
+let rotationDuration = 4;
+let rotationVector = new THREE.Vector3(1, 0, 0);
+let rotationGetter = () => null;
+let rotationDirecction = 1;
+function rotateAnimate() {
+	rotationFrames++;
+
+	for (let axisA = minCubi; axisA <= maxCubi; axisA++) {
+		for (let axisB = minCubi; axisB <= maxCubi; axisB++) {
+			rotateAroundWorldAxis(rotationGetter(axisA, axisB), rotationVector, rotationDirecction*deg2rad(90)/rotationDuration);
 		}
 	}
-	if (frames == rotationDuration) {
-		frames = 0;
+	if (rotationFrames == rotationDuration) {
+		rotationFrames = 0;
 		inRotation = false;
 	}
 }
+
 function rotateRed() {
 	if (inRotation) {return;}
 	inRotation = true;
-	fRotation = rotateRedAnimate
 
-	const min = -1, max = 1, i = max;
+	rotationVector = new THREE.Vector3(1, 0, 0);
+	rotationDirecction = 1
+	const i = maxCubi
+	rotationGetter = (j, k) => cubeMatrix[i][j][k];
+	let rotationSetter = (j, k, cubi) => {cubeMatrix[i][j][k] = cubi};
 
-	rotateMatrix((j, k) => cubeMatrix[i][j][k], (j, k, cubi) => {cubeMatrix[i][j][k] = cubi}, -1);
-	rotateMatrix((j, k) => cubeMatrix[i][j][k], (j, k, cubi) => {cubeMatrix[i][j][k] = cubi}, -1);
+	rotateMatrix(rotationGetter, rotationSetter, -1);
+	rotateMatrix(rotationGetter, rotationSetter, -1);
 }
 
-function rotateGreenAnimate() {
-	frames++;
-	const min = -1, max = 1, j = max;
-	for (let i = min; i <= max; i++) {
-		for (let k = min; k <= max; k++) {
-			rotateAroundWorldAxis(cubeMatrix[i][j][k], new THREE.Vector3(0, 1, 0), deg2rad(90)/rotationDuration);
-		}
-	}
-	if (frames == rotationDuration) {
-		frames = 0;
-		inRotation = false;
-	}
-}
 function rotateGreen() {
 	if (inRotation) {return;}
 	inRotation = true;
-	fRotation = rotateGreenAnimate;
 
-	const min = -1, max = 1, j = max;
+	rotationVector = new THREE.Vector3(0, 1, 0);
+	rotationDirecction = 1
+	const j = maxCubi
+	rotationGetter = (i, k) => cubeMatrix[i][j][k];
+	let rotationSetter = (i, k, cubi) => {cubeMatrix[i][j][k] = cubi};
 
-	rotateMatrix((i, k) => cubeMatrix[i][j][k], (i, k, cubi) => {cubeMatrix[i][j][k] = cubi}, 1);
-	rotateMatrix((i, k) => cubeMatrix[i][j][k], (i, k, cubi) => {cubeMatrix[i][j][k] = cubi}, 1);
+	rotateMatrix(rotationGetter, rotationSetter, 1);
+	rotateMatrix(rotationGetter, rotationSetter, 1);
 }
+
+function rotateBlue() {
+	if (inRotation) {return;}
+	inRotation = true;
+
+	rotationVector = new THREE.Vector3(0, 0, 1);
+	rotationDirecction = 1
+	const k = maxCubi
+	rotationGetter = (i, j) => cubeMatrix[i][j][k];
+	let rotationSetter = (i, j, cubi) => {cubeMatrix[i][j][k] = cubi};
+
+	rotateMatrix(rotationGetter, rotationSetter, -1);
+	rotateMatrix(rotationGetter, rotationSetter, -1);
+}
+
+function rotateOrange() {
+	if (inRotation) {return;}
+	inRotation = true;
+
+	rotationVector = new THREE.Vector3(1, 0, 0);
+	rotationDirecction = 1
+	const i = minCubi
+	rotationGetter = (j, k) => cubeMatrix[i][j][k];
+	let rotationSetter = (j, k, cubi) => {cubeMatrix[i][j][k] = cubi};
+
+	rotateMatrix(rotationGetter, rotationSetter, -1);
+	rotateMatrix(rotationGetter, rotationSetter, -1);
+}
+
+function rotateYellow() {
+	if (inRotation) {return;}
+	inRotation = true;
+
+	rotationVector = new THREE.Vector3(0, 1, 0);
+	rotationDirecction = 1
+	const j = minCubi
+	rotationGetter = (i, k) => cubeMatrix[i][j][k];
+	let rotationSetter = (i, k, cubi) => {cubeMatrix[i][j][k] = cubi};
+
+	rotateMatrix(rotationGetter, rotationSetter, 1);
+	rotateMatrix(rotationGetter, rotationSetter, 1);
+}
+
+function rotatePurple() {
+	if (inRotation) {return;}
+	inRotation = true;
+
+	rotationVector = new THREE.Vector3(0, 0, 1);
+	rotationDirecction = 1
+	const k = minCubi
+	rotationGetter = (i, j) => cubeMatrix[i][j][k];
+	let rotationSetter = (i, j, cubi) => {cubeMatrix[i][j][k] = cubi};
+
+	rotateMatrix(rotationGetter, rotationSetter, -1);
+	rotateMatrix(rotationGetter, rotationSetter, -1);
+}
+
 function rotateMatrix(getter, setter, direcction = 1) {
-	const min = -1, max = 1;
 	let axisA = 1, axisB = 1, addAxisA = 0, addAxisB = direcction;
 	const temp = getter(axisA, axisB);
-	const maxLoop = (max - min + 1)**2 - 1*1 - 2;
+	const maxLoop = (maxCubi - minCubi + 1)**2 - 1*1 - 2;
 	for (let n = 0; n <= maxLoop; n++) {
-		if (axisB + addAxisB < min || axisB + addAxisB > max) {
-			if (axisA == max) {
+		if (axisB + addAxisB < minCubi || axisB + addAxisB > maxCubi) {
+			if (axisA == maxCubi) {
 				addAxisB = 0, addAxisA = -1;
 			} else {
 				addAxisB = 0, addAxisA = 1;
 			}
 		}
-		if (axisA + addAxisA < min || axisA + addAxisA > max) {
-			if (axisB == max) {
+		if (axisA + addAxisA < minCubi || axisA + addAxisA > maxCubi) {
+			if (axisB == maxCubi) {
 				addAxisB = -1, addAxisA = 0;
 			} else {
 				addAxisB = 1, addAxisA = 0;
