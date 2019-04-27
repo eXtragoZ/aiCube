@@ -16,12 +16,21 @@ let frameSpeed = 1 / 60;
 
 let positionLine;
 let astroLine = new THREE.Object3D();
-let cubeSize = 300
-let cubiSize = cubeSize / 3 - 8
-let stickerSize = cubeSize * 0.25
-let cubeContainer = new THREE.Object3D();
+const cubeSize = 300
+const cubiSize = cubeSize / 3 - 8
+const stickerSize = cubeSize * 0.25
+const cubeContainer = new THREE.Object3D();
 let cubeMatrix = [];
 const minCubi = -1, maxCubi = 1;
+
+var sides = [
+	{ name: "ROJO", normal: new THREE.Vector3(1, 0, 0), rotation: new THREE.Vector3(0, 1, 0), color: 0xdd3311, rotate: rotateRed },
+	{ name: "NARANJA", normal: new THREE.Vector3(-1, 0, 0), rotation: new THREE.Vector3(0, 1, 0), color: 0xff9000, rotate: rotateOrange},
+	{ name: "VERDE", normal: new THREE.Vector3(0, 1, 0), rotation: new THREE.Vector3(1, 0, 0), color: 0x11dd33, rotate: rotateGreen},
+	{ name: "AMARILLO", normal: new THREE.Vector3(0, -1, 0), rotation: new THREE.Vector3(1, 0, 0), color: 0xffff00, rotate: rotateYellow},
+	{ name: "AZUL", normal: new THREE.Vector3(0, 0, 1), rotation: new THREE.Vector3(0, 0, 0), color: 0x5533dd, rotate: rotateBlue},
+	{ name: "VIOLETA", normal: new THREE.Vector3(0, 0, -1), rotation: new THREE.Vector3(0, 0, 0), color: 0xdd11dd, rotate: rotatePurple}
+];
 
 let controls = {
 	menu: 100,
@@ -52,6 +61,8 @@ function init() {
 	initStats();
 	initControls();
 
+	initMouseTracking();
+
 	console.log(scene)
 }
 
@@ -80,47 +91,33 @@ function newCube() {
 }
 
 function addStickers(cubi, i, j, k) {
-	const distSticker = cubiSize / 2 + 1;
 	cubi.colors = [];
 	if (i == maxCubi) {
-		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xdd3311);
-		sticker.position.set(distSticker, 0, 0);
-		sticker.rotation.set(0, deg2rad(90), 0);
-		cubi.add(sticker);
-		cubi.colors.push("ROJO");
+		addStickerSide(cubi, sides[0]);
 	} else if (i == minCubi) {
-		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xff9000);
-		sticker.position.set(-distSticker, 0, 0);
-		sticker.rotation.set(0, deg2rad(90), 0);
-		cubi.add(sticker);
-		cubi.colors.push("NARANJA");
+		addStickerSide(cubi, sides[1]);
 	}
 
 	if (j == maxCubi) {
-		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0x11dd33);
-		sticker.position.set(0, distSticker, 0);
-		sticker.rotation.set(deg2rad(90), 0, 0);
-		cubi.add(sticker);
-		cubi.colors.push("VERDE");
+		addStickerSide(cubi, sides[2]);
 	} else if (j == minCubi) {
-		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xffff00);
-		sticker.position.set(0, -distSticker, 0);
-		sticker.rotation.set(deg2rad(90), 0, 0);
-		cubi.add(sticker);
-		cubi.colors.push("AMARILLO");
+		addStickerSide(cubi, sides[3]);
 	}
 
 	if (k == maxCubi) {
-		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0x5533dd);
-		sticker.position.set(0, 0, distSticker);
-		cubi.add(sticker);
-		cubi.colors.push("AZUL");
+		addStickerSide(cubi, sides[4]);
 	} else if (k == minCubi) {
-		let sticker = roundedRectShape(stickerSize, stickerSize, 20, 0xdd11dd);
-		sticker.position.set(0, 0, -distSticker);
-		cubi.add(sticker);
-		cubi.colors.push("VIOLETA");
+		addStickerSide(cubi, sides[5]);
 	}
+}
+
+function addStickerSide(cubi, side) {
+	const distSticker = cubiSize / 2 + 1;
+	const sticker = roundedRectShape(stickerSize, stickerSize, 20, side.color);
+	sticker.position.copy(side.normal).multiplyScalar(distSticker);
+	sticker.setRotationFromAxisAngle(side.rotation, deg2rad(90));
+	cubi.add(sticker);
+	cubi.colors.push(side.color);
 }
 
 function getCubi() {
@@ -154,13 +151,14 @@ function initStats() {
 }
 function initControls() {
 	const gui = new dat.GUI({ closeOnTop: true });
+	/*
 	gui.add(this, 'rotateRed').name('Rotar Rojo');
 	gui.add(this, 'rotateGreen').name('Rotar Verde');
 	gui.add(this, 'rotateBlue').name('Rotar Azul');
 	gui.add(this, 'rotateOrange').name('Rotar Naranja');
 	gui.add(this, 'rotateYellow').name('Rotar Amarillo');
 	gui.add(this, 'rotatePurple').name('Rotar Violeta');
-
+	*/
 	gui.add(controls, 'menu', [75, 100, 150, 200, 250, 300]).name('Tamaño Menu %').onChange(function () {
 		$('.dg.main.a').css({
 			'transform-origin': '0 0',
@@ -187,10 +185,10 @@ function createLights() {
 function animate() {
 	let delta = clock.getElapsedTime();
 	logic(delta);
-
 	cameraControls.update(clock.getDelta());
-
 	stats.update();
+	raycastUpdate();
+
 	renderer.render(scene, camera);
 
 	requestAnimationFrame(animate);
@@ -227,13 +225,12 @@ function rotateRed() {
 	inRotation = true;
 
 	rotationVector = new THREE.Vector3(1, 0, 0);
-	rotationDirecction = 1
 	const i = maxCubi
 	rotationGetter = (j, k) => cubeMatrix[i][j][k];
 	let rotationSetter = (j, k, cubi) => { cubeMatrix[i][j][k] = cubi };
 
 	for (let times = 0; times < maxCubi - minCubi; times++) {
-		rotateMatrix(rotationGetter, rotationSetter, -1);
+		rotateMatrix(rotationGetter, rotationSetter, -rotationDirecction);
 	}
 }
 
@@ -242,13 +239,12 @@ function rotateGreen() {
 	inRotation = true;
 
 	rotationVector = new THREE.Vector3(0, 1, 0);
-	rotationDirecction = 1
 	const j = maxCubi
 	rotationGetter = (i, k) => cubeMatrix[i][j][k];
 	let rotationSetter = (i, k, cubi) => { cubeMatrix[i][j][k] = cubi };
 
 	for (let times = 0; times < maxCubi - minCubi; times++) {
-		rotateMatrix(rotationGetter, rotationSetter, 1);
+		rotateMatrix(rotationGetter, rotationSetter, rotationDirecction);
 	}
 }
 
@@ -257,13 +253,12 @@ function rotateBlue() {
 	inRotation = true;
 
 	rotationVector = new THREE.Vector3(0, 0, 1);
-	rotationDirecction = 1
 	const k = maxCubi
 	rotationGetter = (i, j) => cubeMatrix[i][j][k];
 	let rotationSetter = (i, j, cubi) => { cubeMatrix[i][j][k] = cubi };
 
 	for (let times = 0; times < maxCubi - minCubi; times++) {
-		rotateMatrix(rotationGetter, rotationSetter, -1);
+		rotateMatrix(rotationGetter, rotationSetter, -rotationDirecction);
 	}
 }
 
@@ -271,14 +266,13 @@ function rotateOrange() {
 	if (inRotation) { return; }
 	inRotation = true;
 
-	rotationVector = new THREE.Vector3(1, 0, 0);
-	rotationDirecction = 1
+	rotationVector = new THREE.Vector3(-1, 0, 0);
 	const i = minCubi
 	rotationGetter = (j, k) => cubeMatrix[i][j][k];
 	let rotationSetter = (j, k, cubi) => { cubeMatrix[i][j][k] = cubi };
 
 	for (let times = 0; times < maxCubi - minCubi; times++) {
-		rotateMatrix(rotationGetter, rotationSetter, -1);
+		rotateMatrix(rotationGetter, rotationSetter, rotationDirecction);
 	}
 }
 
@@ -286,14 +280,13 @@ function rotateYellow() {
 	if (inRotation) { return; }
 	inRotation = true;
 
-	rotationVector = new THREE.Vector3(0, 1, 0);
-	rotationDirecction = 1
+	rotationVector = new THREE.Vector3(0, -1, 0);
 	const j = minCubi
 	rotationGetter = (i, k) => cubeMatrix[i][j][k];
 	let rotationSetter = (i, k, cubi) => { cubeMatrix[i][j][k] = cubi };
 
 	for (let times = 0; times < maxCubi - minCubi; times++) {
-		rotateMatrix(rotationGetter, rotationSetter, 1);
+		rotateMatrix(rotationGetter, rotationSetter, -rotationDirecction);
 	}
 }
 
@@ -301,14 +294,13 @@ function rotatePurple() {
 	if (inRotation) { return; }
 	inRotation = true;
 
-	rotationVector = new THREE.Vector3(0, 0, 1);
-	rotationDirecction = 1
+	rotationVector = new THREE.Vector3(0, 0, -1);
 	const k = minCubi
 	rotationGetter = (i, j) => cubeMatrix[i][j][k];
 	let rotationSetter = (i, j, cubi) => { cubeMatrix[i][j][k] = cubi };
 
 	for (let times = 0; times < maxCubi - minCubi; times++) {
-		rotateMatrix(rotationGetter, rotationSetter, -1);
+		rotateMatrix(rotationGetter, rotationSetter, rotationDirecction);
 	}
 }
 
@@ -360,31 +352,31 @@ function percentageSolved() {
 				const cubiColors = cubeMatrix[i][j][k].colors;
 				let adjacent = 0;
 				let percentage = 0;
-				if (!cubiNotValid(i-1, j, k)) {
+				if (!cubiNotValid(i - 1, j, k)) {
 					adjacent++;
-					percentage += compareColors(cubiColors, cubeMatrix[i-1][j][k].colors);
+					percentage += compareColors(cubiColors, cubeMatrix[i - 1][j][k].colors);
 				}
-				if (!cubiNotValid(i+1, j, k)) {
+				if (!cubiNotValid(i + 1, j, k)) {
 					adjacent++;
-					percentage += compareColors(cubiColors, cubeMatrix[i+1][j][k].colors);
+					percentage += compareColors(cubiColors, cubeMatrix[i + 1][j][k].colors);
 				}
-				if (!cubiNotValid(i, j-1, k)) {
+				if (!cubiNotValid(i, j - 1, k)) {
 					adjacent++;
-					percentage += compareColors(cubiColors, cubeMatrix[i][j-1][k].colors);
+					percentage += compareColors(cubiColors, cubeMatrix[i][j - 1][k].colors);
 				}
-				if (!cubiNotValid(i, j+1, k)) {
+				if (!cubiNotValid(i, j + 1, k)) {
 					adjacent++;
-					percentage += compareColors(cubiColors, cubeMatrix[i][j+1][k].colors);
+					percentage += compareColors(cubiColors, cubeMatrix[i][j + 1][k].colors);
 				}
-				if (!cubiNotValid(i, j, k-1)) {
+				if (!cubiNotValid(i, j, k - 1)) {
 					adjacent++;
-					percentage += compareColors(cubiColors, cubeMatrix[i][j][k-1].colors);
+					percentage += compareColors(cubiColors, cubeMatrix[i][j][k - 1].colors);
 				}
-				if (!cubiNotValid(i, j, k+1)) {
+				if (!cubiNotValid(i, j, k + 1)) {
 					adjacent++;
-					percentage += compareColors(cubiColors, cubeMatrix[i][j][k+1].colors);
+					percentage += compareColors(cubiColors, cubeMatrix[i][j][k + 1].colors);
 				}
-				totalPercentage += percentage/adjacent;
+				totalPercentage += percentage / adjacent;
 			}
 		}
 	}
@@ -448,6 +440,81 @@ function normalizeAngle(degrees) {
 	degrees = degrees % 360;
 	return degrees > 180 ? degrees - 360 : degrees;
 }
+
+//----------------------Mouse Position----------------------------
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+var mouseBall;
+
+function initMouseTracking() {
+	window.addEventListener('mousedown', onMouseDown, true);
+	window.addEventListener('mousemove', onMouseMove, true);
+
+	mouseBall = new THREE.Mesh(new THREE.SphereGeometry(5, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+	mouseBall.name = "mouseBall";
+	scene.add(mouseBall);
+
+	for (const side of sides) {
+		createMousePlane(side);
+	}
+
+}
+
+function createMousePlane(side) {
+	const plane = new THREE.Mesh(
+		new THREE.PlaneGeometry(cubeSize, cubeSize, 1),
+		new THREE.MeshBasicMaterial({ color: side.color, side: THREE.DoubleSide, opacity: 0.0, transparent: true }));
+
+	plane.position.copy(side.normal).multiplyScalar(cubeSize / 2);
+	plane.setRotationFromAxisAngle(side.rotation, deg2rad(90));
+
+	plane.color = side.name;
+	plane.name = "mousePlane";
+	plane.side = side;
+	scene.add(plane);
+	return plane;
+}
+
+function onMouseMove(event) {
+	mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+	mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+}
+
+function raycastUpdate() {
+	if (!mouse.x && !mouse.y) { return; }
+	raycaster.setFromCamera(mouse, camera);
+	const intersects = raycaster.intersectObjects(scene.children, true);
+	for (const intersection of intersects) {
+		if (intersection.object.name != "mouseBall" && intersection.object.type == "Mesh") {
+			mouseBall.position.copy(intersection.point);
+			break;
+		}
+	}
+}
+function onMouseDown(event) {
+	if (inRotation) {return;}
+	mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+	mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+	raycaster.setFromCamera(mouse, camera);
+	const intersects = raycaster.intersectObjects(scene.children, true);
+	for (const intersection of intersects) {
+		if (intersection.object.name == "mousePlane") {
+			mouseBall.position.copy(intersection.point);
+			if (event.button == 0) {
+				rotationDirecction = 1;
+				intersection.object.side.rotate();
+			} else if (event.button == 2) {
+				rotationDirecction = -1;
+				intersection.object.side.rotate();
+			}
+
+			break;
+		}
+	}
+}
+
+//---------------------------------Init----------------------------
 
 init();
 animate();
